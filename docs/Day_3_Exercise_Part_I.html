@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+
+<meta charset="utf-8" />
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="pandoc" />
+
+
+<meta name="author" content="Hastings" />
+
+<meta name="date" content="2017-07-12" />
+
+<title>Bootcamp Day 3 Report</title>
+
+<script src="site_libs/jquery-1.11.3/jquery.min.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link href="site_libs/bootstrap-3.3.5/css/bootstrap.min.css" rel="stylesheet" />
+<script src="site_libs/bootstrap-3.3.5/js/bootstrap.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/html5shiv.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/respond.min.js"></script>
+<script src="site_libs/navigation-1.1/tabsets.js"></script>
+<link href="site_libs/highlightjs-1.1/default.css" rel="stylesheet" />
+<script src="site_libs/highlightjs-1.1/highlight.js"></script>
+
+<style type="text/css">code{white-space: pre;}</style>
+<style type="text/css">
+  pre:not([class]) {
+    background-color: white;
+  }
+</style>
+<script type="text/javascript">
+if (window.hljs && document.readyState && document.readyState === "complete") {
+   window.setTimeout(function() {
+      hljs.initHighlighting();
+   }, 0);
+}
+</script>
+
+
+
+<style type="text/css">
+h1 {
+  font-size: 34px;
+}
+h1.title {
+  font-size: 38px;
+}
+h2 {
+  font-size: 30px;
+}
+h3 {
+  font-size: 24px;
+}
+h4 {
+  font-size: 18px;
+}
+h5 {
+  font-size: 16px;
+}
+h6 {
+  font-size: 12px;
+}
+.table th:not([align]) {
+  text-align: left;
+}
+</style>
+
+
+</head>
+
+<body>
+
+<style type = "text/css">
+.main-container {
+  max-width: 940px;
+  margin-left: auto;
+  margin-right: auto;
+}
+code {
+  color: inherit;
+  background-color: rgba(0, 0, 0, 0.04);
+}
+img {
+  max-width:100%;
+  height: auto;
+}
+.tabbed-pane {
+  padding-top: 12px;
+}
+button.code-folding-btn:focus {
+  outline: none;
+}
+</style>
+
+
+
+<div class="container-fluid main-container">
+
+<!-- tabsets -->
+<script>
+$(document).ready(function () {
+  window.buildTabsets("TOC");
+});
+</script>
+
+<!-- code folding -->
+
+
+
+
+
+
+<div class="fluid-row" id="header">
+
+
+
+<h1 class="title toc-ignore">Bootcamp Day 3 Report</h1>
+<h4 class="author"><em>Hastings</em></h4>
+<h4 class="date"><em>July 12, 2017</em></h4>
+
+</div>
+
+
+<p><strong>Load Libraries and Datasets</strong></p>
+<pre class="r"><code>library(Biobase)
+library(rafalib)
+library(genefilter)
+library(GSE5859)
+data(GSE5859)</code></pre>
+<div id="part-1" class="section level1">
+<h1>PART 1</h1>
+<p><strong>Gene Expression Levels</strong></p>
+<pre class="r"><code>geneExpression = exprs(e)</code></pre>
+<p><strong>Print Date Information</strong></p>
+<pre class="r"><code>sampleInfo = pData(e)
+head(sampleInfo$date)</code></pre>
+<pre><code>## [1] &quot;2003-02-04&quot; &quot;2003-02-04&quot; &quot;2002-12-17&quot; &quot;2003-01-30&quot; &quot;2003-01-03&quot;
+## [6] &quot;2003-01-16&quot;</code></pre>
+<p><strong>Printing a Table Summarizing Ethnic Groups by Year</strong></p>
+<pre class="r"><code>year = factor( format(sampleInfo$date,&quot;%y&quot;) )
+tab = table(year,sampleInfo$ethnicity)
+print(tab)</code></pre>
+<pre><code>##     
+## year ASN CEU HAN
+##   02   0  32   0
+##   03   0  54   0
+##   04   0  13   0
+##   05  80   3   0
+##   06   2   0  24</code></pre>
+<p><strong>DIFFERENTIAL EXPRESSION ANALYSIS</strong></p>
+<pre class="r"><code>#remove control genes
+out &lt;- grep(&quot;AFFX&quot;,rownames(geneExpression))</code></pre>
+<p><strong>Use a t-test to perform differential expression analysis</strong></p>
+<pre class="r"><code># between CEU and ASN
+
+eth &lt;- sampleInfo$ethnicity
+ind&lt;- which(eth%in%c(&quot;CEU&quot;,&quot;ASN&quot;))
+res1 &lt;- rowttests(geneExpression[-out,ind],droplevels(eth[ind]))
+
+# between 2002 vs 2003 within CEU
+
+ind &lt;- which(year%in%c(&quot;02&quot;,&quot;03&quot;) &amp; eth==&quot;CEU&quot;)
+res2 &lt;- rowttests(geneExpression[-out,ind],droplevels(year[ind]))</code></pre>
+<p><strong>Plot Histograms For p-values</strong></p>
+<pre class="r"><code>hist(res1$p, main=&quot;p-value of CEU vs ASN&quot;)</code></pre>
+<p><img src="Day_3_Exercise_Part_I_files/figure-html/unnamed-chunk-7-1.png" width="672" /></p>
+<pre class="r"><code>hist(res2$p, main=&quot;p-value of 2002 vs 2003 for CEU&quot;)</code></pre>
+<p><img src="Day_3_Exercise_Part_I_files/figure-html/unnamed-chunk-7-2.png" width="672" /></p>
+</div>
+<div id="part-2" class="section level1">
+<h1>PART 2</h1>
+<p><strong>Remove a Redundant Sample</strong></p>
+<pre class="r"><code>cors &lt;- cor(exprs(e))
+Pairs=which(abs(cors)&gt;0.9999,arr.ind=TRUE)
+out = Pairs[which(Pairs[,1]&lt;Pairs[,2]),,drop=FALSE]
+if(length(out[,2])&gt;0) e=e[,-out[2]]</code></pre>
+<p><strong>Remove Control Probes From Analysis</strong></p>
+<pre class="r"><code>out &lt;- grep(&quot;AFFX&quot;,featureNames(e))
+e &lt;- e[-out,]</code></pre>
+<p><strong>Create a detrended gene expression data matrix</strong></p>
+<pre class="r"><code>y &lt;- exprs(e)-rowMeans(exprs(e))</code></pre>
+<p><strong>Extract Information on Dates and Ethnic Group</strong></p>
+<pre class="r"><code>dates &lt;- pData(e)$date
+eth &lt;- pData(e)$ethnicity</code></pre>
+<p><strong>Perform PCA</strong></p>
+<pre class="r"><code>s &lt;- svd(y)
+
+##Plot PC1 and PC2 for Ethnic Groups
+
+cols = as.numeric(eth)
+mypar()
+plot(s$v[,1],s$v[,2],col=cols,pch=16, xlab=&quot;PC1&quot;,ylab=&quot;PC2&quot;)
+legend(&quot;bottomleft&quot;,levels(eth),col=seq(along=levels(eth)),pch=16)
+title(&quot;Ethnic groups&quot;)</code></pre>
+<p><img src="Day_3_Exercise_Part_I_files/figure-html/unnamed-chunk-12-1.png" width="672" /></p>
+<pre class="r"><code>##Plot PC1 and PC2 for Years
+
+cols = as.numeric(year)
+mypar()
+plot(s$v[,1],s$v[,2],col=cols,pch=16, xlab=&quot;PC1&quot;,ylab=&quot;PC2&quot;)
+legend(&quot;bottomleft&quot;,levels(year),col=seq(along=levels(year)),pch=16)
+title(&quot;Years&quot;)</code></pre>
+<p><img src="Day_3_Exercise_Part_I_files/figure-html/unnamed-chunk-12-2.png" width="672" /></p>
+</div>
+
+
+
+
+</div>
+
+<script>
+
+// add bootstrap table styles to pandoc tables
+function bootstrapStylePandocTables() {
+  $('tr.header').parent('thead').parent('table').addClass('table table-condensed');
+}
+$(document).ready(function () {
+  bootstrapStylePandocTables();
+});
+
+
+</script>
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

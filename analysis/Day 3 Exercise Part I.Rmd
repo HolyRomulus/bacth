@@ -1,0 +1,129 @@
+---
+title: "Bootcamp Day 3 Report"
+author: "Hastings"
+date: "July 12, 2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+**Load Libraries and Datasets**
+
+```{r, message = FALSE}
+library(Biobase)
+library(rafalib)
+library(genefilter)
+library(GSE5859)
+data(GSE5859)
+```
+
+#PART 1#
+
+
+**Gene Expression Levels**
+
+```{r}
+geneExpression = exprs(e)
+```
+
+**Print Date Information**
+
+```{r}
+sampleInfo = pData(e)
+head(sampleInfo$date)
+```
+
+**Printing a Table Summarizing Ethnic Groups by Year** 
+
+```{r}
+year = factor( format(sampleInfo$date,"%y") )
+tab = table(year,sampleInfo$ethnicity)
+print(tab)
+```
+
+**DIFFERENTIAL EXPRESSION ANALYSIS**
+
+```{r}
+
+#remove control genes
+out <- grep("AFFX",rownames(geneExpression))
+```
+
+**Use a t-test to perform differential expression analysis**
+
+```{r}
+# between CEU and ASN
+
+eth <- sampleInfo$ethnicity
+ind<- which(eth%in%c("CEU","ASN"))
+res1 <- rowttests(geneExpression[-out,ind],droplevels(eth[ind]))
+
+# between 2002 vs 2003 within CEU
+
+ind <- which(year%in%c("02","03") & eth=="CEU")
+res2 <- rowttests(geneExpression[-out,ind],droplevels(year[ind]))
+```
+
+**Plot Histograms For p-values** 
+
+```{r}
+hist(res1$p, main="p-value of CEU vs ASN")
+hist(res2$p, main="p-value of 2002 vs 2003 for CEU")
+```
+
+#PART 2#
+
+
+**Remove a Redundant Sample**
+
+```{r}
+cors <- cor(exprs(e))
+Pairs=which(abs(cors)>0.9999,arr.ind=TRUE)
+out = Pairs[which(Pairs[,1]<Pairs[,2]),,drop=FALSE]
+if(length(out[,2])>0) e=e[,-out[2]]
+```
+
+**Remove Control Probes From Analysis** 
+
+```{r}
+out <- grep("AFFX",featureNames(e))
+e <- e[-out,]
+```
+
+**Create a detrended gene expression data matrix**
+
+```{r}
+y <- exprs(e)-rowMeans(exprs(e))
+```
+
+**Extract Information on Dates and Ethnic Group** 
+
+```{r}
+dates <- pData(e)$date
+eth <- pData(e)$ethnicity
+```
+
+**Perform PCA**
+
+```{r}
+s <- svd(y)
+
+##Plot PC1 and PC2 for Ethnic Groups
+
+cols = as.numeric(eth)
+mypar()
+plot(s$v[,1],s$v[,2],col=cols,pch=16, xlab="PC1",ylab="PC2")
+legend("bottomleft",levels(eth),col=seq(along=levels(eth)),pch=16)
+title("Ethnic groups")
+
+##Plot PC1 and PC2 for Years
+
+cols = as.numeric(year)
+mypar()
+plot(s$v[,1],s$v[,2],col=cols,pch=16, xlab="PC1",ylab="PC2")
+legend("bottomleft",levels(year),col=seq(along=levels(year)),pch=16)
+title("Years")
+```
+
